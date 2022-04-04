@@ -1,3 +1,4 @@
+use core::fmt;
 use std::{error::Error, io::{BufRead, BufReader, self}, fs::File};
 use clap::{Command, Arg};
 
@@ -29,7 +30,6 @@ pub fn get_args() -> MyResult<Config> {
         .help("Number of lines")
         .short('n')
         .long("lines")
-        .conflicts_with("bytes")
         .default_value("10"),
     )
     .arg(
@@ -38,6 +38,7 @@ pub fn get_args() -> MyResult<Config> {
         .help("Number of bytes")
         .short('c')
         .takes_value(true)
+        .conflicts_with("lines")
         .long("bytes"),
     )
     .get_matches();
@@ -70,13 +71,27 @@ fn open(filename: &str) -> MyResult<Box<dyn BufRead>> {
 
 pub fn run(config: Config) -> MyResult<()> {
     for filename in config.files  {
+        // println!("==> {} <==", filename);
         match open(&filename) {
             Err(e) => eprintln!("{}: {}", filename, e),
-            Ok(_) => {
-                println!("==> {} <==", filename);
-                for line in filename.lines(){
-                    let line = line;
-                    println!("{}", line)
+            Ok(filename) => {
+                'outer: for (line_num, line) in filename.lines().enumerate() {
+                    let line = line?;
+                    if config.bytes.is_some() {
+                        for (c_num, c) in line.chars().enumerate() {
+                            if c_num == config.bytes.unwrap() {
+                                break 'outer;
+                            } else {
+                                print!("{}", c) // need to read whole file not line by line
+                            }
+                        }
+                        // println!("")
+                    }
+                    // else if line_num == config.lines {
+                    //     break;
+                    // } else {
+                    //     println!("{}", line)
+                    // }
                 }
             }
         }
