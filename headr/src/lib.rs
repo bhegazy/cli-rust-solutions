@@ -1,4 +1,4 @@
-use core::fmt;
+use std::io::Read;
 use std::{error::Error, io::{BufRead, BufReader, self}, fs::File};
 use clap::{Command, Arg};
 
@@ -70,32 +70,32 @@ fn open(filename: &str) -> MyResult<Box<dyn BufRead>> {
 }
 
 pub fn run(config: Config) -> MyResult<()> {
-    for filename in config.files  {
-        // println!("==> {} <==", filename);
+    for (file_num,filename) in config.files.iter().enumerate() {
         match open(&filename) {
             Err(e) => eprintln!("{}: {}", filename, e),
-            Ok(filename) => {
-                'outer: for (line_num, line) in filename.lines().enumerate() {
+            Ok(file) => {
+                if config.files.len() > 1 {
+                        println!("{}==> {} <==", if file_num > 0 {"\n"} else {""}, filename);
+                }
+                if let Some(num_bytes) = config.bytes {
+                    let mut buffer = vec!(0; num_bytes);
+                    let mut handle = file.take(num_bytes as u64);
+                    let read = handle.read(&mut buffer)?;
+                    let s = String::from_utf8_lossy(&buffer[..read]);
+                    print!("{}", s);
+                } else {
+                    for (line_num, line) in file.lines().enumerate() {
                     let line = line?;
-                    if config.bytes.is_some() {
-                        for (c_num, c) in line.chars().enumerate() {
-                            if c_num == config.bytes.unwrap() {
-                                break 'outer;
-                            } else {
-                                print!("{}", c) // need to read whole file not line by line
-                            }
-                        }
-                        // println!("")
+                    if line_num == config.lines {
+                        break;
+                    } else {
+                        println!("{}", line)
                     }
-                    // else if line_num == config.lines {
-                    //     break;
-                    // } else {
-                    //     println!("{}", line)
-                    // }
                 }
             }
         }
     }
+}
     Ok(())
 }
 
