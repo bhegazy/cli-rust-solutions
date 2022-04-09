@@ -3,4 +3,5 @@ fn main() {
         eprintln!("{}", e);
         std::process::exit(1);
     }
+    // wcr::run(wcr::get_args()?)
 }
