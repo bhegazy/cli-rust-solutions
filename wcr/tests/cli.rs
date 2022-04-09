@@ -29,7 +29,7 @@ fn gen_bad_file() -> String {
 #[test]
 fn dies_chars_and_bytes() -> TestResult {
     Command::cargo_bin(PRG)?
-        .args(&["-m", "-c"])
+        .args(&["-c", "-m"])// fixed test, might be because of newer version of clap
         .assert()
         .failure()
         .stderr(predicate::str::contains(
